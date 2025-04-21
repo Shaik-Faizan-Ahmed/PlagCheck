@@ -1,0 +1,16 @@
+streamlit
+pandas
+nltk==3.6.7
+beautifulsoup4
+requests
+scikit-learn
+plotly
+python-docx
+PyPDF2
+serpapi
+google-search-results
+docx2txt
+flask
+werkzeug
+seaborn
+matplotlib
