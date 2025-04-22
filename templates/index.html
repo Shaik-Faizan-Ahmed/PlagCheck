@@ -30,23 +30,6 @@
       background-color: #2b6cb0;
     }
 
-    .tooltip {
-      position: absolute;
-      bottom: 40px;
-      left: -30px;
-      background-color: rgba(0, 0, 0, 0.9);
-      color: #fff;
-      padding: 8px;
-      border-radius: 4px;
-      font-size: 14px;
-      display: none;
-      width: 200px;
-    }
-
-    .info-button:hover .tooltip {
-      display: block;
-    }
-
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
@@ -69,10 +52,48 @@
     table tr:hover {
       background-color: #f0f0f0;
     }
+
+    /* Custom Styling */
+    .history-item {
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .history-item strong {
+      color: #4a4a4a;
+    }
+    .history-item em {
+      color: #999;
+    }
   </style>
 </head>
 
 <body class="min-h-screen font-sans text-gray-800">
+
+  <!-- Usage Modal -->
+  <div id="usageModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded-2xl shadow-xl w-11/12 max-w-lg relative">
+      <button id="closeModal" class="absolute top-2 right-2 text-gray-500 hover:text-red-500 text-2xl">&times;</button>
+      <h2 class="text-2xl font-bold text-purple-700 mb-4">How to Use PlagCheck</h2>
+      <ul class="list-disc list-inside text-gray-700 space-y-2 text-sm">
+        <li><strong>Text Check:</strong> Paste your content in the text box and click "Check Plagiarism".</li>
+        <li><strong>File Check:</strong> Upload a single file (.pdf, .docx, or .txt) to analyze for plagiarism.</li>
+        <li><strong>Similarity:</strong> Upload multiple files to detect similarities among them. A heatmap and similarity scores will be shown.</li>
+        <li>Use the <span class="text-green-600">API Credits</span> indicator to track usage if integrated with APIs.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Quick Access Modal -->
+  <div id="quickAccessModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded-2xl shadow-xl w-11/12 max-w-lg relative">
+      <button id="closeQuickAccess" class="absolute top-2 right-2 text-gray-500 hover:text-red-500 text-2xl">&times;</button>
+      <h2 class="text-2xl font-bold text-purple-700 mb-4">Plagiarism Check History</h2>
+      <div id="historyList" class="text-gray-700 space-y-2 text-sm max-h-64 overflow-y-auto">
+        <!-- Dynamic History Items will go here -->
+      </div>
+    </div>
+  </div>
+
   <!-- Header -->
   <header class="flex items-center justify-between px-10 py-6 bg-white shadow-md">
     <div class="flex items-center space-x-3">
@@ -83,11 +104,8 @@
     </div>
 
     <div class="flex items-center space-x-6">
-      <div class="relative">
-        <button class="info-button">?</button>
-        <div class="tooltip">Info about PlagCheck and how it works.</div>
-      </div>
-      <button class="px-4 py-2 rounded-full shadow-md border border-orange-400">Quick Access</button>
+      <button id="openModal" class="info-button">?</button>
+      <button id="openQuickAccess" class="px-4 py-2 rounded-full shadow-md border border-orange-400">Quick Access</button>
       <div class="flex items-center space-x-2">
         <div class="w-3 h-3 rounded-full bg-green-500"></div>
         <span class="text-sm text-gray-500">API Credits: 95</span>
@@ -97,7 +115,7 @@
 
   <!-- Main Section -->
   <main class="max-w-4xl mx-auto mt-16 p-8 bg-white rounded-3xl shadow-xl backdrop-blur-md">
-    
+
     <div class="flex justify-center mb-8">
       <div class="flex space-x-6 bg-gradient-to-r from-purple-100 to-blue-100 p-1 rounded-full">
         <button class="tab-button bg-white text-purple-700 font-semibold py-2 px-6 rounded-full shadow-md" data-tab="text">Text Check</button>
@@ -106,58 +124,44 @@
       </div>
     </div>
 
-    <!-- Text Tab -->
+    <!-- Tabs Content -->
     <div id="text" class="tab-content active">
       <h2 class="text-2xl font-extrabold text-gray-800 mb-2">Check Text for Plagiarism</h2>
       <p class="text-gray-500 mb-4">Enter or paste your text below to check for plagiarism</p>
-      <textarea 
-        class="w-full h-48 p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 bg-gray-50 shadow-inner resize-none" 
-        placeholder="Enter or paste your text here..."></textarea>
+      <textarea class="w-full h-48 p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 bg-gray-50 shadow-inner resize-none" placeholder="Enter or paste your text here..."></textarea>
       <div class="text-right text-sm text-gray-400 mt-1">0 words</div>
     </div>
 
-    <!-- File Tab -->
     <div id="file" class="tab-content">
       <h2 class="text-2xl font-extrabold text-gray-800 mb-2">Upload a File</h2>
       <p class="text-gray-500 mb-4">Choose a .docx, .pdf, or .txt file to check for plagiarism</p>
-      <input 
-        type="file" 
-        accept=".pdf,.docx,.txt" 
-        class="block w-full text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-inner focus:outline-none focus:ring-2 focus:ring-purple-400"
-      />
+      <input type="file" accept=".pdf,.docx,.txt" class="block w-full text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-inner focus:outline-none focus:ring-2 focus:ring-purple-400"/>
     </div>
 
-    <!-- Similarity Tab -->
     <div id="similarity" class="tab-content">
       <h2 class="text-2xl font-extrabold text-gray-800 mb-2">Upload Files for Similarity Check</h2>
       <p class="text-gray-500 mb-4">Select multiple files (.pdf, .docx, .txt) to compare against each other</p>
-      <input 
-        type="file" 
-        accept=".pdf,.docx,.txt" 
-        multiple 
-        class="block w-full text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-inner focus:outline-none focus:ring-2 focus:ring-purple-400"
-      />
+      <input type="file" accept=".pdf,.docx,.txt" multiple class="block w-full text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-inner focus:outline-none focus:ring-2 focus:ring-purple-400"/>
       <p class="text-sm text-gray-400 mt-2">Hold Ctrl (or Cmd on Mac) to select multiple files</p>
     </div>
 
-    <!-- Hidden Form for Submission -->
+    <!-- Form Submission -->
     <form id="plag-form" enctype="multipart/form-data">
       <input type="hidden" id="option" name="option" value="text">
       <div class="flex justify-end mt-8">
-        <button type="submit" class="px-6 py-3 rounded-full shadow-lg font-semibold bg-red-600 hover:bg-red-700 text-white">
-          Check Plagiarism
-        </button>
+        <button type="submit" class="px-6 py-3 rounded-full shadow-lg font-semibold bg-red-600 hover:bg-red-700 text-white">Check Plagiarism</button>
       </div>
     </form>
 
     <!-- Results -->
     <div id="result" class="mt-10 bg-gray-50 p-6 rounded-xl shadow-inner text-sm text-gray-700 whitespace-pre-wrap"></div>
 
-    <!-- Script Section -->
+    <!-- Script -->
     <script>
       const tabs = document.querySelectorAll('.tab-button');
       const contents = document.querySelectorAll('.tab-content');
       const optionInput = document.getElementById('option');
+      const historyList = document.getElementById('historyList');
 
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -174,7 +178,6 @@
 
       document.getElementById('plag-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-
         const option = optionInput.value;
         const formData = new FormData();
         formData.append('option', option);
@@ -182,12 +185,10 @@
         if (option === 'text') {
           const textarea = document.querySelector('#text textarea');
           formData.append('text', textarea.value);
-
         } else if (option === 'file') {
           const file = document.querySelector('#file input[type="file"]').files[0];
           if (!file) return alert('Please upload a file');
           formData.append('file', file);
-
         } else if (option === 'similarity') {
           const files = document.querySelector('#similarity input[type="file"]').files;
           if (!files.length) return alert('Please upload at least two files');
@@ -200,117 +201,86 @@
         resultDiv.innerHTML = 'Checking...';
 
         try {
-          const response = await fetch('/check', {
-            method: 'POST',
-            body: formData
-          });
-
+          const response = await fetch('/check', { method: 'POST', body: formData });
           const data = await response.json();
-          if (!data) {
-            resultDiv.innerHTML = 'No response received.';
-            return;
-          }
 
-          // Show results based on type
           if (option === 'similarity') {
-            let tableHTML = `
-              <table>
-                <thead>
-                  <tr>
-                    <th>File 1</th>
-                    <th>File 2</th>
-                    <th>Similarity (%)</th>
-                  </tr>
-                </thead>
-                <tbody>
-            `;
+            let tableHTML = `<table><thead><tr><th>File 1</th><th>File 2</th><th>Similarity (%)</th></tr></thead><tbody>`;
             data.data.forEach(result => {
-              tableHTML += `
-                <tr>
-                  <td>${result["File 1"]}</td>
-                  <td>${result["File 2"]}</td>
-                  <td>${(result["Similarity"] * 100).toFixed(2)}%</td>
-                </tr>
-              `;
+              tableHTML += `<tr><td>${result["File 1"]}</td><td>${result["File 2"]}</td><td>${(result["Similarity"] * 100).toFixed(2)}%</td></tr>`;
             });
             tableHTML += '</tbody></table>';
-
             if (data.heatmap) {
               tableHTML += `<h3 class="mt-6 font-bold text-lg">Similarity Heatmap:</h3>
                             <img class="mt-2 rounded-xl border shadow-md" src="data:image/png;base64,${data.heatmap}" alt="Similarity Heatmap" />`;
             }
-
             resultDiv.innerHTML = tableHTML;
-
+            addHistory('Similarity', `Compared ${data.data.length} files`, new Date().toLocaleString());
           } else {
             if (Array.isArray(data.data)) {
-              let tableHTML = `
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Source</th>
-                      <th>Similarity (%)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-              `;
+              let tableHTML = `<table><thead><tr><th>Source</th><th>Similarity (%)</th></tr></thead><tbody>`;
               data.data.forEach(result => {
-                tableHTML += `
-                  <tr>
-                    <td><a href="${result.Source}" target="_blank">${result.Source}</a></td>
-                    <td>${(result.Similarity * 100).toFixed(2)}%</td>
-                  </tr>
-                `;
+                tableHTML += `<tr><td><a href="${result.Source}" target="_blank">${result.Source}</a></td><td>${(result.Similarity * 100).toFixed(2)}%</td></tr>`;
               });
               tableHTML += '</tbody></table>';
               resultDiv.innerHTML = tableHTML;
             } else {
               resultDiv.innerHTML = data.data || 'No plagiarism found.';
             }
+            addHistory(option.charAt(0).toUpperCase() + option.slice(1), data.data || 'No plagiarism found.', new Date().toLocaleString());
           }
         } catch (err) {
           console.error(err);
           resultDiv.innerHTML = 'Error occurred. Please try again.';
         }
       });
+
+      // Function to add history item dynamically
+      function addHistory(type, description, date) {
+        const historyItem = document.createElement('div');
+        historyItem.classList.add('history-item');
+        historyItem.innerHTML = `<strong>${type}</strong> - ${description} <em>${date}</em>`;
+        historyList.appendChild(historyItem);
+      }
+
+      // Modal toggles
+      document.getElementById('openModal').addEventListener('click', () => {
+        document.getElementById('usageModal').classList.remove('hidden');
+      });
+      document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('usageModal').classList.add('hidden');
+      });
+      document.getElementById('openQuickAccess').addEventListener('click', () => {
+        document.getElementById('quickAccessModal').classList.remove('hidden');
+      });
+      document.getElementById('closeQuickAccess').addEventListener('click', () => {
+        document.getElementById('quickAccessModal').classList.add('hidden');
+      });
     </script>
   </main>
-  <section style="background-color: #1e1e2f; color: white; padding: 50px 20px;">
-    <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 10px;">Meet the Builders</h2>
-    <p style="text-align: center; margin-bottom: 40px; font-size: 1.2rem;">The creators behind this project</p>
-  
-    <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
-  
-      <!-- Faizan -->
-      <div style="background: linear-gradient(to bottom, #3e3e55, #292943); border-radius: 20px; padding: 30px; width: 300px; text-align: center;">
-        <div style="display: flex; justify-content: center; margin-bottom: 15px;">
-          <img src="https://avatars.githubusercontent.com/u/113419160" alt="Faizan" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover;">
-        </div>
-        <h3 style="font-size: 1.5rem;">Shaik Faizan Ahmed</h3>
-        <p style="font-size: 1rem; margin-top: 5px;">Roll No: 23B81A05L3</p>
+
+  <!-- Meet the Builders Section -->
+  <section class="bg-gray-900 text-white py-16 px-6">
+    <h2 class="text-4xl font-bold text-center mb-4">Meet the Builders</h2>
+    <p class="text-center text-lg mb-12">The creators behind this project</p>
+    <div class="flex flex-wrap justify-center gap-8">
+      <div class="bg-gray-800 rounded-2xl p-6 w-72 text-center">
+        <img src="https://avatars.githubusercontent.com/u/113419160" alt="Faizan" class="w-28 h-28 mx-auto rounded-full object-cover mb-4">
+        <h3 class="text-xl font-semibold">Shaik Faizan Ahmed</h3>
+        <p class="text-sm mt-1">Roll No: 23B81A05L3</p>
       </div>
-  
-      <!-- Mohan -->
-      <div style="background: linear-gradient(to bottom, #3e3e55, #292943); border-radius: 20px; padding: 30px; width: 300px; text-align: center;">
-        <div style="display: flex; justify-content: center; margin-bottom: 15px;">
-          <img src="https://via.placeholder.com/120" alt="Mohan" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover;">
-        </div>
-        <h3 style="font-size: 1.5rem;">AVS Mohan Kumar</h3>
-        <p style="font-size: 1rem; margin-top: 5px;">Roll No: 23B81A05M6</p>
+      <div class="bg-gray-800 rounded-2xl p-6 w-72 text-center">
+        <img src="https://via.placeholder.com/120" alt="Mohan" class="w-28 h-28 mx-auto rounded-full object-cover mb-4">
+        <h3 class="text-xl font-semibold">AVS Mohan Kumar</h3>
+        <p class="text-sm mt-1">Roll No: 23B81A05M6</p>
       </div>
-  
-      <!-- Vikas -->
-      <div style="background: linear-gradient(to bottom, #3e3e55, #292943); border-radius: 20px; padding: 30px; width: 300px; text-align: center;">
-        <div style="display: flex; justify-content: center; margin-bottom: 15px;">
-          <img src="https://via.placeholder.com/120" alt="Vikas" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover;">
-        </div>
-        <h3 style="font-size: 1.5rem;">Banala Vikas Rao</h3>
-        <p style="font-size: 1rem; margin-top: 5px;">Roll No: 23B81A05R0</p>
+      <div class="bg-gray-800 rounded-2xl p-6 w-72 text-center">
+        <img src="https://via.placeholder.com/120" alt="Vikas" class="w-28 h-28 mx-auto rounded-full object-cover mb-4">
+        <h3 class="text-xl font-semibold">Banala Vikas Rao</h3>
+        <p class="text-sm mt-1">Roll No: 23B81A05B5</p>
       </div>
-  
     </div>
   </section>
-  
-  
+
 </body>
 </html>

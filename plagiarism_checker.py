@@ -22,7 +22,7 @@ def get_url(sentence):
     """Fetches the first URL result for the sentence from Google Search."""
     params = {
         "q": sentence,
-        "api_key": "db9aaffe49f83295b88ab03a5d93881db87811e90016706f059513e13541b61d",  # Replace with your actual API key
+        "api_key": "452ad616874c729414e8e83a112a68c8c20c4bcd927b5b9f6db24ed45dbc37d1",  # Replace with your actual API key
         "engine": "google",
     }
     try:
