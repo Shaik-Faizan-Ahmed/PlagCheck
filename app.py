@@ -29,62 +29,67 @@ def check_plagiarism_route():
     text = ""
     files = []
 
-    if option == 'text':
-        text = request.form.get('text')
+    try:
+        if option == 'text':
+            text = request.form.get('text')
+            if not text:
+                return jsonify({"error": "No text provided."}), 400
 
-    elif option == 'file':
-        uploaded_file = request.files.get('file')
-        if uploaded_file and uploaded_file.filename:
-            filename = secure_filename(uploaded_file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            uploaded_file.save(filepath)
-            try:
-                text = read_file(filepath)
-            except Exception as e:
-                return jsonify({"error": f"Error reading file: {str(e)}"}), 400
-        else:
-            return jsonify({"error": "No valid file uploaded."}), 400
-
-    elif option == 'similarity':
-        uploaded_files = request.files.getlist('files')
-        saved_files = []
-
-        for file in uploaded_files:
-            if file and file.filename:
-                filename = secure_filename(file.filename)
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                saved_files.append(filepath)
-
-        if not saved_files:
-            return jsonify({"error": "No valid files uploaded."}), 400
-
-        try:
-            files = [read_file(f) for f in saved_files]
-            similarity_list = get_similarity_between_files(files)
-            heatmap_path = plot_similarity_heatmap(similarity_list, len(files))
-            return jsonify({
-                "data": similarity_list,
-                "heatmap": heatmap_path
-            })
-        except Exception as e:
-            return jsonify({"error": f"Failed to process similarity: {str(e)}"}), 500
-
-    # Text or file plagiarism check
-    elif text:
-        try:
             sentences = get_sentences(text)
             df = check_plagiarism(sentences, text)
 
             if df.empty:
                 return jsonify({"data": "No plagiarism found."})
-            else:
-                return jsonify({"data": df.to_dict(orient="records")})
-        except Exception as e:
-            return jsonify({"error": f"Plagiarism check failed: {str(e)}"}), 500
+            return jsonify({"data": df.to_dict(orient="records")})
 
-    else:
-        return jsonify({"error": "Invalid input or missing data."}), 400
+        elif option == 'file':
+            uploaded_file = request.files.get('file')
+            if not uploaded_file or not uploaded_file.filename:
+                return jsonify({"error": "No file uploaded."}), 400
+
+            filename = secure_filename(uploaded_file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            uploaded_file.save(filepath)
+
+            text = read_file(filepath)
+            if not text:
+                return jsonify({"error": "Could not extract text from the file."}), 400
+
+            sentences = get_sentences(text)
+            df = check_plagiarism(sentences, text)
+
+            if df.empty:
+                return jsonify({"data": "No plagiarism found."})
+            return jsonify({"data": df.to_dict(orient="records")})
+
+        elif option == 'similarity':
+            uploaded_files = request.files.getlist('files')
+            saved_files = []
+
+            for file in uploaded_files:
+                if file and file.filename:
+                    filename = secure_filename(file.filename)
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    saved_files.append(filepath)
+
+            if not saved_files:
+                return jsonify({"error": "No valid files uploaded for similarity check."}), 400
+
+            files = [read_file(f) for f in saved_files]
+            similarity_list = get_similarity_between_files(files)
+            heatmap_path = plot_similarity_heatmap(similarity_list, len(files))
+
+            return jsonify({
+                "data": similarity_list,
+                "heatmap": heatmap_path
+            })
+
+        else:
+            return jsonify({"error": "Invalid option selected."}), 400
+
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
 if __name__ == '__main__':
